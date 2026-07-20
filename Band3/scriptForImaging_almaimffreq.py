@@ -4,10 +4,10 @@
 import os
 import re
 import sys
-import casadef
+#import casadef
 
-if casadef.casa_version < '4.4.0':
-    sys.exit("Please use CASA version greater than or equal to 4.4.0 with this script")
+#if casadef.casa_version < '4.4.0':
+#    sys.exit("Please use CASA version greater than or equal to 4.4.0 with this script")
 
 finalvis = 'calibrated_final.ms'
 
@@ -33,6 +33,11 @@ flagchannels = '0:62~76;180~192;219~247;317~334;366~390;465~480;512~519;548~555;
 # Save current flags once
 if not os.path.exists(finalvis + '.flagversions/before_cont_flags.flagcmd'):
     flagmanager(vis=finalvis, mode='save', versionname='before_cont_flags')
+
+lockfile = finalvis + '/table.lock'
+if os.path.exists(lockfile):
+    os.system('rm -f ' + lockfile)
+    print('Removed lockfile: ' + lockfile)
 
 initweights(vis=finalvis, wtmode='weight', dowtsp=True)
 
@@ -81,10 +86,31 @@ threshold = '0.0mJy'
 field = '4'
 gridder = 'standard'
 
+def remove_old_mtmfs_products(imagename):
+    old_exts = [
+        '.image', '.image.tt0', '.image.tt1',
+        '.image.pbcor', '.image.tt0.pbcor', '.image.tt1.pbcor',
+        '.model', '.model.tt0', '.model.tt1',
+        '.mask',
+        '.psf', '.psf.tt0', '.psf.tt1',
+        '.residual', '.residual.tt0', '.residual.tt1',
+        '.pb',
+        '.sumwt',
+        '.alpha',
+        '.alpha.error',
+        '.flux',
+    ]
+
+    for ext in old_exts:
+        path = imagename + ext
+        if os.path.exists(path):
+            os.system('rm -rf ' + path)
+
 def clean_continuum(visname, imagename):
     if not os.path.exists(imagename + '.image.tt0.pbcor'):
-        for ext in ['.image', '.mask', '.model', '.image.pbcor', '.psf', '.residual', '.pb', '.sumwt']:
-            rmtables(imagename + ext)
+        remove_old_mtmfs_products(imagename)
+
+    
 
         tclean(
             vis=visname,
@@ -99,10 +125,10 @@ def clean_continuum(visname, imagename):
             robust=robust,
             niter=niter,
             threshold=threshold,
-            interactive=True,
+            interactive=False,
             gridder=gridder,
             pbcor=True,
-            mask='cont.mask'
+            mask='cleanmask_e2.crtf'
         )
 
 # Image all 4 products
