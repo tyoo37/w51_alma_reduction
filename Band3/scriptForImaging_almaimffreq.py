@@ -5,7 +5,11 @@ import os
 import re
 import sys
 #import casadef
+import time
 
+def checkpoint(msg):
+    print(time.strftime("%Y-%m-%d %H:%M:%S"), msg)
+    sys.stdout.flush()
 #if casadef.casa_version < '4.4.0':
 #    sys.exit("Please use CASA version greater than or equal to 4.4.0 with this script")
 
@@ -38,6 +42,7 @@ lockfile = finalvis + '/table.lock'
 if os.path.exists(lockfile):
     os.system('rm -f ' + lockfile)
     print('Removed lockfile: ' + lockfile)
+checkpoint("Starting initweights")
 
 initweights(vis=finalvis, wtmode='weight', dowtsp=True)
 
@@ -67,12 +72,13 @@ build_cont_ms(contvis_wide_all, spwset_wide, width_wide, linefree=False)
 build_cont_ms(contvis_wide_linefree, spwset_wide, width_wide, linefree=True)
 build_cont_ms(contvis_narrow_all, spwset_narrow, width_narrow, linefree=False)
 build_cont_ms(contvis_narrow_linefree, spwset_narrow, width_narrow, linefree=True)
+checkpoint("Finished split products")
 
 # Quick checks
-plotms(vis=contvis_wide_all, xaxis='freq', yaxis='amp', field='4')
-plotms(vis=contvis_wide_linefree, xaxis='freq', yaxis='amp', field='4')
-plotms(vis=contvis_narrow_all, xaxis='freq', yaxis='amp', field='4')
-plotms(vis=contvis_narrow_linefree, xaxis='freq', yaxis='amp', field='4')
+#plotms(vis=contvis_wide_all, xaxis='freq', yaxis='amp', field='4')
+#plotms(vis=contvis_wide_linefree, xaxis='freq', yaxis='amp', field='4')
+#plotms(vis=contvis_narrow_all, xaxis='freq', yaxis='amp', field='4')
+#plotms(vis=contvis_narrow_linefree, xaxis='freq', yaxis='amp', field='4')
 
 #############################################
 # Image the continuum products
@@ -132,22 +138,28 @@ def clean_continuum(visname, imagename):
         )
 
 # Image all 4 products
+checkpoint("Starting tclean for wide_all")
+
 clean_continuum(
     contvis_wide_all,
     'w51e2_spw2_14_6_18_10_3_15_7_19_11_all.mfs.I.manual'
 )
-
+checkpoint("Finished tclean for wide_all")
+checkpoint("Starting tclean for wide_linefree")
 clean_continuum(
     contvis_wide_linefree,
     'w51e2_spw2_14_6_18_10_3_15_7_19_11_linefree.mfs.I.manual'
 )
-
+checkpoint("Finished tclean for wide_linefree")
+checkpoint("Starting tclean for narrow_all")
 clean_continuum(
     contvis_narrow_all,
     'w51e2_spw3_15_7_19_11_all.mfs.I.manual'
 )
-
+checkpoint("Finished tclean for narrow_all")
+checkpoint("Starting tclean for narrow_linefree")
 clean_continuum(
     contvis_narrow_linefree,
     'w51e2_spw3_15_7_19_11_linefree.mfs.I.manual'
 )
+checkpoint("Finished tclean for narrow_linefree")
